@@ -1,20 +1,41 @@
-start_A_star( InitState, PathCost):-
+/*
+* run start_A_star with N from NMin to NMax
+*/
+a_star(InitState, PathCost, NMin, NMax):-
+    incr(NMax, NMax1),
+    NMin < NMax1,
+    print("Running start_A_star with N="), print(NMin), nl,
+    start_A_star(InitState, PathCost, NMin),
+    print("Path found!"), !.
+
+a_star(InitState, PathCost, NMin, NMax):-
+    incr(NMax, NMax1),
+    NMin < NMax1,
+    incr(NMin, NMin1),
+    a_star(InitState, PathCost, NMin1, NMax).
+
+/*
+* wrapper for search_A_star
+*/
+start_A_star(InitState, PathCost, N):-
     score(InitState, 0, 0, InitCost, InitScore),
-    search_A_star( [node(InitState, nil, nil, InitCost , InitScore ) ], [ ], PathCost) .
+    search_A_star([node(InitState, nil, nil, InitCost , InitScore ) ], [ ], PathCost, N).
 
-search_A_star(Queue, ClosedSet, PathCost):-
+search_A_star(Queue, ClosedSet, PathCost, N):-
+    N>(-1),
     fetch(Node, Queue, ClosedSet , RestQueue),
-    continue(Node, RestQueue, ClosedSet, PathCost).
+    continue(Node, RestQueue, ClosedSet, PathCost, N).
 
 
-continue(node(State, Action, Parent, Cost, _) , _  ,  ClosedSet, path_cost(Path, Cost)):-
+continue(node(State, Action, Parent, Cost, _) , _  ,  ClosedSet, path_cost(Path, Cost), _):-
     goal(State), !,
     build_path(node(Parent, _ ,_ , _ , _ ), ClosedSet, [Action/State], Path) .
 
-continue(Node, RestQueue, ClosedSet, Path):-
+continue(Node, RestQueue, ClosedSet, Path, N):-
     expand( Node, NewNodes),
     insert_new_nodes(NewNodes, RestQueue, NewQueue),
-    search_A_star(NewQueue, [Node | ClosedSet ], Path).
+    decr(N, NewN),
+    search_A_star(NewQueue, [Node | ClosedSet ], Path, NewN).
 
 
 fetch(node(State, Action,Parent, Cost, Score),
@@ -70,3 +91,8 @@ del([X|R],X,R).
 del([Y|R],X,[Y|R1]):-
     X\=Y,
     del(R,X,R1).
+
+decr(X,Y):-
+    Y is X-1.
+incr(X,Y):-
+    Y is X+1.
