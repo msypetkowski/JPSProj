@@ -4,15 +4,19 @@
 a_star(InitState, PathCost, NMin, NMax):-
     incr(NMax, NMax1),
     NMin < NMax1,
-    print("Running start_A_star with N="), print(NMin), nl,
+    write("Running start_A_star with N="), write(NMin), nl,
     start_A_star(InitState, PathCost, NMin),
-    print("Path found!"), !.
+    write("Path found!"), !.
 
 a_star(InitState, PathCost, NMin, NMax):-
     incr(NMax, NMax1),
     NMin < NMax1,
     incr(NMin, NMin1),
     a_star(InitState, PathCost, NMin1, NMax).
+
+a_star(_, _, NMax, NMax):-
+    write("Max steps count reached!"), nl, fail.
+
 
 /*
 * wrapper for search_A_star
@@ -23,7 +27,10 @@ start_A_star(InitState, PathCost, N):-
 
 search_A_star(Queue, ClosedSet, PathCost, N):-
     N>(-1),
-    fetch(Node, Queue, ClosedSet , RestQueue),
+    next_node(Node, Queue, ClosedSet , RestQueue),
+
+    write("Current step is "), write(N), write("; Fetched: "), write(Node), nl,
+
     continue(Node, RestQueue, ClosedSet, PathCost, N).
 
 
@@ -37,14 +44,36 @@ continue(Node, RestQueue, ClosedSet, Path, N):-
     decr(N, NewN),
     search_A_star(NewQueue, [Node | ClosedSet ], Path, NewN).
 
+/*
+* K is how many nodes at most will be produced
+*/
+next_node(Node, Queue, ClosedSet, RestQueue):-
+    fetch_choices(K),
+    fetch(Node, Queue, ClosedSet , RestQueue, K).
 
+% get node
 fetch(node(State, Action,Parent, Cost, Score),
-            [node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,  RestQueue) :-
+            [node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,
+            RestQueue, K) :-
+    K>(0),
+    \+ member(node(State, _, _, _, _), ClosedSet).
 
-    \+ member(node(State, _, _, _, _), ClosedSet), !.
+% wrong node (skip, and remove from Queue)
+fetch(node(State, Action,Parent, Cost, Score),
+            [node(State, Action,Parent, Cost, Score) |Queue], ClosedSet,
+            RestQueue, K) :-
+    K>(0),
+    member(node(State, _, _, _, _), ClosedSet),
+    fetch(node(State, Action,Parent, Cost, Score), Queue, ClosedSet , RestQueue, K).
 
-fetch(Node, [_|RestQueue], ClosedSet, NewRest):-
-    fetch(Node, RestQueue, ClosedSet , NewRest).
+% skip node (but keep in Queue)
+fetch(Node,
+            [node(State, Action,Parent, Cost, Score)|Queue], ClosedSet,
+            [node(State, Action,Parent, Cost, Score)|RestQueue], K) :-
+    K>(0),
+    \+ member(node(State, _, _, _, _), ClosedSet),
+    decr(K, KDecr),
+    fetch(Node, Queue, ClosedSet , RestQueue, KDecr).
 
 
 expand(node(State, _, _, Cost, _), NewNodes):-
