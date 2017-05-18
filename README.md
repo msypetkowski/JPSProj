@@ -3,7 +3,8 @@
 Project for JPS classes.
 Modified A* algorithm.
 
-## Example 1
+Example 1
+=========
 
 #### input data:
 
@@ -37,7 +38,8 @@ fetch_choices(2).
 a_star(a, PathAndCost, 1, 10).
 ```
 
-## Example 2
+Example 2
+=========
 
 #### input data
 
@@ -95,4 +97,40 @@ a_star([ pos(0 , 2/1), pos(1 , 1/3), pos(2 , 2/3), pos(3 , 3/3), pos(4 , 1/2), p
 % 4   6
 % 7 5 8
 a_star([ pos(0 , 2/2), pos(1 , 1/3), pos(2 , 2/3), pos(3 , 3/3), pos(4 , 1/2), pos(5 , 2/1), pos(6 , 3/2), pos(7 , 1/1), pos(8 , 3/1) ], PC, 2, 2).
+```
+
+Example 3
+=========
+
+Not monotonic score function.
+TODO: make it work - next stage of the project
+
+#### input data:
+
+```prolog
+succ(a, ax, 1, x).
+succ(a, ay, 2, y).
+
+succ(x, xz, 1, z).
+succ(y, yz, 1, z).
+
+succ(z, zb, 10, b).
+
+hScore(a, 0).
+hScore(x, 11).
+hScore(y, 0).
+hScore(z, 0).
+hScore(b, 0).
+
+goal(b).
+
+% global variable
+fetch_choices(1).
+
+```
+
+#### Example call:
+
+```prolog
+a_star(a, PathAndCost, 1, 10).
 ```

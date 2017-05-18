@@ -32,9 +32,7 @@ start_A_star(InitState, PathCost, N):-
 search_A_star(Queue, ClosedSet, PathCost, N):-
     N>(-1),
     next_node(Node, Queue, ClosedSet , RestQueue),
-
     write("Current step is "), write(N), write("; Fetched: "), write(Node), nl,
-
     continue(Node, RestQueue, ClosedSet, PathCost, N).
 
 
@@ -57,24 +55,24 @@ next_node(Node, Queue, ClosedSet, RestQueue):-
 
 
 % wrong node (skip, and remove from Queue)
-fetch(node(State, Action,Parent, Cost, Score),
+fetch(Node,
             [node(State, Action,Parent, Cost, Score) |Queue], ClosedSet,
             RestQueue, K) :-
     K>(0),
     member(node(State, _, _, _, _), ClosedSet), !,
-    fetch(node(State, Action,Parent, Cost, Score), Queue, ClosedSet , RestQueue, K).
+    fetch(Node, Queue, ClosedSet , RestQueue, K).
 
 % get node
-fetch(node(State, Action,Parent, Cost, Score),
-            [node(State, Action,Parent, Cost, Score) |RestQueue], _,
+fetch(N,
+            [N|RestQueue], _,
             RestQueue, K) :-
     K>(0).
 
 
 % skip node (but keep in Queue)
 fetch(Node,
-            [node(State, Action,Parent, Cost, Score)|Queue], ClosedSet,
-            [node(State, Action,Parent, Cost, Score)|RestQueue], K) :-
+            [N|Queue], ClosedSet,
+            [N|RestQueue], K) :-
     K>(0),
     decr(K, KDecr),
     fetch(Node, Queue, ClosedSet , RestQueue, KDecr).
