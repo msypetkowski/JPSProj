@@ -3,8 +3,9 @@ start_A_star( InitState, PathCost):-
     search_A_star( [node(InitState, nil, nil, InitCost , InitScore ) ], [ ], PathCost) .
 
 search_A_star(Queue, ClosedSet, PathCost):-
-    fetch(Node, Queue, ClosedSet , RestQueue),
-    continue(Node, RestQueue, ClosedSet, PathCost).
+    fetch(Node, Queue, ClosedSet , RestQueue, NewClosedSet),
+    write("Fetched: "), write(Node), nl,
+    continue(Node, RestQueue, NewClosedSet, PathCost).
 
 
 continue(node(State, Action, Parent, Cost, _) , _  ,  ClosedSet, path_cost(Path, Cost)):-
@@ -18,12 +19,29 @@ continue(Node, RestQueue, ClosedSet, Path):-
 
 
 fetch(node(State, Action,Parent, Cost, Score),
-            [node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,  RestQueue) :-
+            [node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,  RestQueue, ClosedSet) :-
 
     \+ member(node(State, _, _, _, _), ClosedSet), !.
 
-fetch(Node, [_|RestQueue], ClosedSet, NewRest):-
-    fetch(Node, RestQueue, ClosedSet , NewRest).
+fetch(node(State, Action,Parent, Cost, Score),
+            [node(State, Action,Parent, Cost, Score) |QueueRest], ClosedSet,
+            QueueRest, ClosedSet) :-
+    member(node(State, _, _, Cost1, _), ClosedSet),
+    write("Conflict on state: "), write(State), write(" new: "), write(Cost), write(" old: "), write(Cost1), nl,
+    Cost < Cost1,
+    write("rerooting (TODO)"), nl,
+    % TODO: rerooting: QueueRest and ClosedSet should be modified here
+    % let N be current node - node(State, Action, Parent, Cost, Score)
+    %
+    % 2 operations should be implemented here:
+    % nodes in QueueRest wchih are children (also indirect) of N, should have Cost and Score reduced by Delta=Cost1-Cost
+    % N should have parent changed to Parent
+    %
+    % new QueueRest and ClosedSet should be bond to last 2 parameters of this procedure
+    !.
+
+fetch(Node, [_|RestQueue], ClosedSet, NewRest, ClosedSet):-
+    fetch(Node, RestQueue, ClosedSet , NewRest, ClosedSet).
 
 
 expand(node(State, _, _, Cost, _), NewNodes):-

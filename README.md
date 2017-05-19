@@ -1,10 +1,11 @@
-# JPSProj
+JPSProj
+=======
 
 Project for JPS classes.
 Modified A* algorithm.
 
 Example 1
-=========
+---------
 
 #### input data:
 
@@ -39,7 +40,7 @@ a_star(a, PathAndCost, 1, 10).
 ```
 
 Example 2
-=========
+---------
 
 #### input data
 
@@ -99,8 +100,8 @@ a_star([ pos(0 , 2/1), pos(1 , 1/3), pos(2 , 2/3), pos(3 , 3/3), pos(4 , 1/2), p
 a_star([ pos(0 , 2/2), pos(1 , 1/3), pos(2 , 2/3), pos(3 , 3/3), pos(4 , 1/2), pos(5 , 2/1), pos(6 , 3/2), pos(7 , 1/1), pos(8 , 3/1) ], PC, 2, 2).
 ```
 
-Example 3
-=========
+Example 1 for AStar2
+--------------------
 
 Not monotonic score function.
 TODO: make it work - next stage of the project
@@ -132,5 +133,43 @@ fetch_choices(1).
 #### Example call:
 
 ```prolog
-a_star(a, PathAndCost, 1, 10).
+start_A_star(a, PC).
+```
+
+Example 2 for AStar2
+--------------------
+
+Bigger version of Example3
+
+#### input data:
+
+```prolog
+succ(a, ax, 1, x).
+succ(a, ay, 2, y).
+
+succ(x, xz, 1, z).
+succ(y, yz, 1, z).
+
+succ(z, zw, 1, w).
+succ(w, wv, 1, v).
+succ(v, vb, 10, b).
+
+hScore(a, 0).
+hScore(x, 13).
+hScore(y, 0).
+hScore(z, 0).
+hScore(v, 0).
+hScore(w, 0).
+
+hScore(b, 0).
+
+
+goal(b).
+
+```
+
+#### Example call:
+
+```prolog
+start_A_star(a, PC).
 ```
