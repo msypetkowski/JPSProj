@@ -1,3 +1,22 @@
+succ(a, ax, 1, x).
+succ(a, ay, 2, y).
+
+succ(x, xz, 1, z).
+succ(y, yz, 1, z).
+
+succ(z, zb, 10, b).
+
+hScore(a, 0).
+hScore(x, 11).
+hScore(y, 0).
+hScore(z, 0).
+hScore(b, 0).
+
+goal(b).
+
+% global variable
+fetch_choices(1).
+
 %%%%%%%%%%%%%%%
 % program
 %%%%%%%%%%%%%%%
@@ -31,8 +50,10 @@ start_A_star(InitState, PathCost, N):-
 
 search_A_star(Queue, ClosedSet, PathCost, N):-
     N>(-1),
+    write("--------------"),nl,
     next_node(Node, Queue, ClosedSet , RestQueue),
     write("Current step is "), write(N), write("; Fetched: "), write(Node), nl,
+    write("Closed Set: "), write(ClosedSet), nl,
     continue(Node, RestQueue, ClosedSet, PathCost, N).
 
 
@@ -53,6 +74,16 @@ next_node(Node, Queue, ClosedSet, RestQueue):-
     fetch_choices(K),
     fetch(Node, Queue, ClosedSet , RestQueue, K).
 
+% node is in ClosedSet, but has better score
+fetch(node(State, Action,Parent, Cost, Score),
+            [node(State, Action,Parent, Cost, Score) |Queue], ClosedSet,
+            Queue, K) :-
+    K>(0),
+    member(node(State, _, _, Cost1, _), ClosedSet),
+    write("new: "), write(Cost), write("old: "), write(Cost1), nl,
+    Cost < Cost1,
+    write("pass"), nl,
+    !.
 
 % wrong node (skip, and remove from Queue)
 fetch(Node,
