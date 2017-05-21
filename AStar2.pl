@@ -19,29 +19,39 @@ continue(Node, RestQueue, ClosedSet, Path):-
 
 
 fetch(node(State, Action,Parent, Cost, Score),
-            [node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,  RestQueue, ClosedSet) :-
-
+            [node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,
+            RestQueue, ClosedSet) :-
     \+ member(node(State, _, _, _, _), ClosedSet), !.
 
-fetch(node(State, Action,Parent, Cost, Score),
+fetch(Node,
             [node(State, Action,Parent, Cost, Score) |QueueRest], ClosedSet,
-            QueueRest, ClosedSet) :-
+            FinalQueueRest, FinalClosedSet) :-
     member(node(State, _, _, Cost1, _), ClosedSet),
     write("Conflict on state: "), write(State), write(" new: "), write(Cost), write(" old: "), write(Cost1), nl,
     Cost < Cost1,
-    write("rerooting (TODO)"), nl,
-    % TODO: rerooting: QueueRest and ClosedSet should be modified here
-    % let N be current node - node(State, Action, Parent, Cost, Score)
-    %
-    % 2 operations should be implemented here:
-    % nodes in QueueRest wchih are children (also indirect) of N, should have Cost and Score reduced by Delta=Cost1-Cost
-    % N should have parent changed to Parent
-    %
-    % new QueueRest and ClosedSet should be bond to last 2 parameters of this procedure
+    replace_node(node(State, Action, Parent, Cost, Score), ClosedSet, NewClosedSet),
+    Diff is Cost1 - Cost,
+    write("Diff: "), write(Diff), nl,
+    update_nodes(State, Diff, QueueRest, NewQueueRest),
+    fetch(Node, NewQueueRest, NewClosedSet,
+                FinalQueueRest, FinalClosedSet),
     !.
 
-fetch(Node, [_|RestQueue], ClosedSet, NewRest, ClosedSet):-
-    fetch(Node, RestQueue, ClosedSet , NewRest, ClosedSet).
+fetch(Node, [_|RestQueue], ClosedSet, NewRest, NewClosedSet):-
+    fetch(Node, RestQueue, ClosedSet , NewRest, NewClosedSet).
+
+% TODO:
+
+% insert Node into Set replacing other node with same State
+% bond result to NewSet
+replace_node(Node, Set, NewSet):-
+    write('not implemented'), nl, fail.
+
+% decrease Cost and Score of all Nodes in Queue,
+% that are ancestors of Node with State=RootState.
+% bond result to NewQueue (it is priority queue)
+update_nodes(RootState, Diff, Queue, NewQueue):-
+    write('not implemented'), nl, fail.
 
 
 expand(node(State, _, _, Cost, _), NewNodes):-
