@@ -27,31 +27,76 @@ fetch(Node,
             [node(State, Action,Parent, Cost, Score) |QueueRest], ClosedSet,
             FinalQueueRest, FinalClosedSet) :-
     member(node(State, _, _, Cost1, _), ClosedSet),
-    write("Conflict on state: "), write(State), write(" new: "), write(Cost), write(" old: "), write(Cost1), nl,
+
+    write("Conflict on state: "), write(State),
+    write(" new cost: "), write(Cost),
+    write(" old cost: "), write(Cost1), nl,
+
     Cost < Cost1,
     replace_node(node(State, Action, Parent, Cost, Score), ClosedSet, NewClosedSet),
     Diff is Cost1 - Cost,
     write("Diff: "), write(Diff), nl,
-    update_nodes(State, Diff, QueueRest, NewQueueRest),
-    fetch(Node, NewQueueRest, NewClosedSet,
+
+    % update Cost and Score of nodes in Queue
+    write("Open nodes before update: "), write(QueueRest), nl,
+    update_nodes_p_queue(State, Diff, ClosedSet, QueueRest, [], NewQueueRest),
+    write("Open nodes after  update: "), write(NewQueueRest), nl,
+
+    % update Cost and Score of nodes in ClosedSet
+    write("Closed nodes before update: "), write(NewClosedSet), nl,
+    update_nodes(State, Diff, ClosedSet, NewClosedSet, NewClosedSetUpdated),
+    write("Closed nodes after  update: "), write(NewClosedSetUpdated), nl,
+    fetch(Node, NewQueueRest, NewClosedSetUpdated,
                 FinalQueueRest, FinalClosedSet),
     !.
 
 fetch(Node, [_|RestQueue], ClosedSet, NewRest, NewClosedSet):-
     fetch(Node, RestQueue, ClosedSet , NewRest, NewClosedSet).
 
-% TODO:
-
 % insert Node into Set replacing other node with same State
 % bond result to NewSet
-replace_node(Node, Set, NewSet):-
-    write('not implemented'), nl, fail.
+replace_node(node(State,Action,Parent,Cost,Score),
+            [node(State,_,_,_,_)|Set],
+            [node(State,Action,Parent,Cost,Score)|Set]):-
+    !.
 
-% decrease Cost and Score of all Nodes in Queue,
+replace_node(Node, [N|Set], [N|NewSet]):-
+    replace_node(Node, Set, NewSet).
+
+% decrease Cost and Score of all Nodes in given Queue,
 % that are ancestors of Node with State=RootState.
 % bond result to NewQueue (it is priority queue)
-update_nodes(RootState, Diff, Queue, NewQueue):-
-    write('not implemented'), nl, fail.
+update_nodes(_,_,_,[],[]).
+
+update_nodes(RootState, Diff, ClosedSet, [Node|Set], [UpdatedNode|NewSet]):-
+    update_node(RootState, Diff, ClosedSet, Node, UpdatedNode),
+    update_nodes(RootState, Diff, ClosedSet, Set, NewSet).
+
+
+% decrease Cost and Score of all Nodes in given priority Queue,
+% that are ancestors of Node with State=RootState.
+% bond result to NewQueue (it is priority queue)
+update_nodes_p_queue(_,_,_,[],Result, Result).
+
+update_nodes_p_queue(RootState, Diff, ClosedSet, [Node|QueueRest], PartialResult, Result):-
+    update_node(RootState, Diff, ClosedSet, Node, UpdatedNode),
+    insert_p_queue(UpdatedNode, PartialResult, PartialResult1),
+    update_nodes_p_queue(RootState, Diff, ClosedSet, QueueRest, PartialResult1, Result).
+
+update_node(RootState, Diff, ClosedSet,
+        node(State,Action,Parent,Cost,   Score   ),
+        node(State,Action,Parent,NewCost,NewScore)):-
+    is_ancestor(node(State,Action,Parent,Cost,Score), RootState, ClosedSet),
+    NewCost is Cost - Diff,
+    NewScore is Score - Diff, !.
+
+% don't update
+update_node(_, _, _, Node, Node).
+
+is_ancestor(node(_,_,RootState,_,_), RootState, _):- !.
+is_ancestor(node(_,_,Parent,_,_), RootState, ClosedSet):-
+    member(node(Parent, Ac, Pa, Co, Sc), ClosedSet),
+    is_ancestor(node(Parent, Ac, Pa, Co, Sc), RootState, ClosedSet).
 
 
 expand(node(State, _, _, Cost, _), NewNodes):-
