@@ -4,6 +4,16 @@ JPSProj
 Project for JPS classes.
 Modified A* algorithm.
 
+Running tests
+-------------
+```bash
+swipl tests2.pl # tests for stage 2
+```
+then in prolog console
+```prolog
+run_tests.
+```
+
 Example 1
 ---------
 
