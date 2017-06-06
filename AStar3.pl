@@ -187,4 +187,37 @@ print_node(node(State, Action, Parent, Cost, FScore)):-
     write("Score: "), write(FScore), nl.
 
 print_state(State):-
-    write(State), nl.
+    sort(State, Sorted),
+    print_all(Sorted).
+
+print_all([pos(x1, y1/z1), pos(x2, y2/z2),pos(x3, y3/z3),pos(x4, y4/z4), pos(x5, y5/z5), pos(x6, y6/z6), pos(x7, y7/z7), pos(x8, y8/z8), pos(x9, y9/z9) ]):-
+    write(x1), nl,
+    write(x2), nl,
+    write(x3), nl,
+    write(x4), nl,
+    write(x5), nl,
+    write(x6), nl,
+    write(x7), nl,
+    write(x8), nl,
+    write(x9), nl.
+
+sort(List, Sorted):-
+    predsort(key, State, Sorted).
+
+key(>, pos(_, y1/z1), pos(_, y2/z2)):-
+    y1 > y2.
+
+key(>, pos(_, y1/z1), pos(_, y2/z2)):-
+    y1 = y1,
+    z1 > z2.
+    
+key(<, pos(_, y1/z1), pos(_, y2/z2)):-
+    y1 < y2.
+
+key(<, pos(_, y1/z1), pos(_, y2/z2)):-
+    y1 = y2,
+    z1 < z2.
+
+key(=, pos(_, y1/z1), pos(_, y2/z2)):-
+    y1 = y2,
+    z1 = z2.
