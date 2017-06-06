@@ -69,10 +69,12 @@ start_A_star(InitState, PathCost, N):-
 
 search_A_star(Queue, ClosedSet, PathCost, N):-
     N>(-1),
-    write("--------------"),nl,
+    write("--------------------------------------"),nl,
     next_node(Node, Queue, ClosedSet , RestQueue),
-    write("Current step is "), write(N), write("; Fetched: "), write(Node), nl,
-    write("Closed Set: "), write(ClosedSet), nl,
+    write("Current step is "), write(N), nl,
+    %  TODO: choose node to fetch
+    write("; Fetched: "), nl, print_node(Node), nl,
+    % write("Closed Set: "), write(ClosedSet), nl,
     continue(Node, RestQueue, ClosedSet, PathCost, N).
 
 
@@ -177,3 +179,10 @@ decr(X,Y):-
     Y is X-1.
 incr(X,Y):-
     Y is X+1.
+
+print_node(node(State, Action, Parent, Cost, FScore)):-
+    print_state(State),
+    write("Score: "), write(FScore), nl.
+
+print_state(State):-
+    write(State), nl.
