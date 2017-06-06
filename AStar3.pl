@@ -25,7 +25,7 @@ abs(X,AbsX) :-
 % TODO
 hScore(_, 0).
 
-fetch_choices(1).
+fetch_choices(3).
 
 % 1 2 3
 % 4 5 6
@@ -69,11 +69,13 @@ start_A_star(InitState, PathCost, N):-
 
 search_A_star(Queue, ClosedSet, PathCost, N):-
     N>(-1),
-    write("--------------------------------------"),nl,
     next_node(Node, Queue, ClosedSet , RestQueue),
+    write("--------------------------------------"),nl,
     write("Current step is "), write(N), nl,
     %  TODO: choose node to fetch
-    write("; Fetched: "), nl, print_node(Node), nl,
+    write("; Fetching "), nl, print_node(Node), nl,
+    write(" OK ? (y/n) "), read(Continue),
+    Continue == y,
     % write("Closed Set: "), write(ClosedSet), nl,
     continue(Node, RestQueue, ClosedSet, PathCost, N).
 
