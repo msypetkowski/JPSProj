@@ -97,17 +97,6 @@ next_node(Node, Queue, ClosedSet, RestQueue):-
     fetch_choices(K),
     fetch(Node, Queue, ClosedSet , RestQueue, K).
 
-% node is in ClosedSet, but has better score
-fetch(node(State, Action,Parent, Cost, Score),
-            [node(State, Action,Parent, Cost, Score) |Queue], ClosedSet,
-            Queue, K) :-
-    K>(0),
-    member(node(State, _, _, Cost1, _), ClosedSet),
-    write("new: "), write(Cost), write("old: "), write(Cost1), nl,
-    Cost < Cost1,
-    write("pass"), nl,
-    !.
-
 % wrong node (skip, and remove from Queue)
 fetch(Node,
             [node(State, _,_, _, _) |Queue], ClosedSet,
@@ -182,42 +171,40 @@ decr(X,Y):-
 incr(X,Y):-
     Y is X+1.
 
-print_node(node(State, Action, Parent, Cost, FScore)):-
+print_node(node(State, _, _, _, FScore)):-
     print_state(State),
     write("Score: "), write(FScore), nl.
 
 print_state(State):-
-    sort(State, Sorted),
+    sort1(State, Sorted),
     print_all(Sorted).
 
-print_all([pos(x1, y1/z1), pos(x2, y2/z2),pos(x3, y3/z3),pos(x4, y4/z4), pos(x5, y5/z5), pos(x6, y6/z6), pos(x7, y7/z7), pos(x8, y8/z8), pos(x9, y9/z9) ]):-
-    write(x1), nl,
-    write(x2), nl,
-    write(x3), nl,
-    write(x4), nl,
-    write(x5), nl,
-    write(x6), nl,
-    write(x7), nl,
-    write(x8), nl,
-    write(x9), nl.
+print_all([pos(X1, Y1/Z1), pos(X2, Y2/Z2), pos(X3, Y3/Z3),
+           pos(X4, Y4/Z4), pos(X5, Y5/Z5), pos(X6, Y6/Z6),
+           pos(X7, Y7/Z7), pos(X8, Y8/Z8), pos(X9, Y9/Z9) ]):-
+    write(X1), write(" "),
+    write(X2), write(" "),
+    write(X3), write(" "), nl,
+    write(X4), write(" "),
+    write(X5), write(" "),
+    write(X6), write(" "), nl,
+    write(X7), write(" "),
+    write(X8), write(" "),
+    write(X9), write(" "), nl.
 
-sort(List, Sorted):-
-    predsort(key, State, Sorted).
+cheaper(>, pos(_, Y1/Z1), pos(_, Y2/Z2)):-
+    Z1 < Z2.
 
-key(>, pos(_, y1/z1), pos(_, y2/z2)):-
-    y1 > y2.
+cheaper(>, pos(_, Y1/Z), pos(_, Y2/Z)):-
+    Y1 > Y2.
 
-key(>, pos(_, y1/z1), pos(_, y2/z2)):-
-    y1 = y1,
-    z1 > z2.
-    
-key(<, pos(_, y1/z1), pos(_, y2/z2)):-
-    y1 < y2.
+cheaper(<, pos(_, Y1/Z1), pos(_, Y2/Z2)):-
+    Z1 > Z2.
 
-key(<, pos(_, y1/z1), pos(_, y2/z2)):-
-    y1 = y2,
-    z1 < z2.
+cheaper(<, pos(_, Y1/Z), pos(_, Y2/Z)):-
+    Y1 < Y2.
 
-key(=, pos(_, y1/z1), pos(_, y2/z2)):-
-    y1 = y2,
-    z1 = z2.
+cheaper(=, pos(_, Y/Z), pos(_, Y/Z)).
+
+sort1(List, Sorted):-
+    predsort(cheaper, List, Sorted).
