@@ -79,7 +79,7 @@ abs(X,AbsX) :-
 % TODO
 hScore(_, 0).
 
-fetch_choices(2).
+fetch_choices(1).
 
 % 1 2 3
 % 4 5 6
