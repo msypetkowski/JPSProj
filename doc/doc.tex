@@ -1,0 +1,523 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage{english}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{enumitem}
+
+\usepackage[a4paper, total={8in, 8in}]{geometry}
+
+
+
+
+\title{A* - projekt z przedmiotu JPS}
+\author{Michał Sypetkowski, Grzegorz Olechwierowicz}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Etap 2}\label{sec:general}
+Zmiany w kodzie:
+
+\begin{lstlisting}[language=Prolog]
+fetch(node(State, Action,Parent, Cost, Score),
+            [node(State, Action,Parent, Cost, Score) |RestQueue], ClosedSet,
+            RestQueue, ClosedSet) :-
+    \+ member(node(State, _, _, _, _), ClosedSet), !.
+
+fetch(Node,
+            [node(State, Action,Parent, Cost, Score) |QueueRest], ClosedSet,
+            FinalQueueRest, FinalClosedSet) :-
+    member(node(State, _, _, Cost1, _), ClosedSet),
+
+    write("Conflict on state: "), write(State),
+    write(" new cost: "), write(Cost),
+    write(" old cost: "), write(Cost1), nl,
+
+    Cost < Cost1,
+    replace_node(node(State, Action, Parent, Cost, Score), ClosedSet, NewClosedSet),
+    Diff is Cost1 - Cost,
+    write("Diff: "), write(Diff), nl,
+
+    % update Cost and Score of nodes in Queue
+    write("Open nodes before update: "), write(QueueRest), nl,
+    update_nodes_p_queue(State, Diff, ClosedSet, QueueRest, [], NewQueueRest),
+    write("Open nodes after  update: "), write(NewQueueRest), nl,
+
+    % update Cost and Score of nodes in ClosedSet
+    write("Closed nodes before update: "), write(NewClosedSet), nl,
+    update_nodes(State, Diff, ClosedSet, NewClosedSet, NewClosedSetUpdated),
+    write("Closed nodes after  update: "), write(NewClosedSetUpdated), nl,
+    fetch(Node, NewQueueRest, NewClosedSetUpdated,
+                FinalQueueRest, FinalClosedSet),
+    !.
+
+fetch(Node, [_|RestQueue], ClosedSet, NewRest, NewClosedSet):-
+    fetch(Node, RestQueue, ClosedSet , NewRest, NewClosedSet).
+
+% insert Node into Set replacing other node with same State
+% bond result to NewSet
+replace_node(node(State,Action,Parent,Cost,Score),
+            [node(State,_,_,_,_)|Set],
+            [node(State,Action,Parent,Cost,Score)|Set]):-
+    !.
+
+replace_node(Node, [N|Set], [N|NewSet]):-
+    replace_node(Node, Set, NewSet).
+
+% decrease Cost and Score of all Nodes in given Queue,
+% that are ancestors of Node with State=RootState.
+% bond result to NewQueue (it is priority queue)
+update_nodes(_,_,_,[],[]).
+
+update_nodes(RootState, Diff, ClosedSet, [Node|Set], [UpdatedNode|NewSet]):-
+    update_node(RootState, Diff, ClosedSet, Node, UpdatedNode),
+    update_nodes(RootState, Diff, ClosedSet, Set, NewSet).
+
+
+% decrease Cost and Score of all Nodes in given priority Queue,
+% that are ancestors of Node with State=RootState.
+% bond result to NewQueue (it is priority queue)
+update_nodes_p_queue(_,_,_,[],Result, Result).
+
+update_nodes_p_queue(RootState, Diff, ClosedSet, [Node|QueueRest], PartialResult, Result):-
+    update_node(RootState, Diff, ClosedSet, Node, UpdatedNode),
+    insert_p_queue(UpdatedNode, PartialResult, PartialResult1),
+    update_nodes_p_queue(RootState, Diff, ClosedSet, QueueRest, PartialResult1, Result).
+
+update_node(RootState, Diff, ClosedSet,
+        node(State,Action,Parent,Cost,   Score   ),
+        node(State,Action,Parent,NewCost,NewScore)):-
+    is_ancestor(node(State,Action,Parent,Cost,Score), RootState, ClosedSet),
+    NewCost is Cost - Diff,
+    NewScore is Score - Diff, !.
+
+% don't update
+update_node(_, _, _, Node, Node).
+
+is_ancestor(node(_,_,RootState,_,_), RootState, _):- !.
+is_ancestor(node(_,_,Parent,_,_), RootState, ClosedSet):-
+    member(node(Parent, Ac, Pa, Co, Sc), ClosedSet),
+    is_ancestor(node(Parent, Ac, Pa, Co, Sc), RootState, ClosedSet).
+\end{lstlisting}
+
+
+\section{Etap 1 i 3}\label{sec:general}
+Zmiany w kodzie:
+
+\subsection{Interaktywne sterowanie przebiegiem}\label{sec:przeb}
+\begin{lstlisting}[language=Prolog]
+start_A_star(InitState, PathCost, N):-
+    score(InitState, 0, 0, InitCost, InitScore),
+    search_A_star([node(InitState, nil, nil, InitCost , InitScore ) ], [ ], PathCost, N).
+
+search_A_star(Queue, ClosedSet, PathCost, N):-
+    N>(-1),
+    next_node(Node, Queue, ClosedSet , RestQueue),
+    write("--------------------------------------"),nl,
+    write("Current step is "), write(N), nl,
+    write("Possible choices: "), nl, print_nodes(Queue), nl,
+    write("; Fetching "), nl, print_node(Node), nl,
+    write(" OK ? (y/n) "), read(Continue),
+    Continue == y,
+    % write("Closed Set: "), write(ClosedSet), nl,
+    continue(Node, RestQueue, ClosedSet, PathCost, N).
+\end{lstlisting}
+
+\subsection{Wypisywanie}\label{sec:print}
+\begin{lstlisting}[language=Prolog]
+print_nodes([]).
+print_nodes([Node|Rest]):-
+    print_node(Node), nl,
+    print_nodes(Rest).  
+print_node(node(State, _, _, _, FScore)):-
+    print_state(State),
+    write("Score: "), write(FScore), nl.
+
+print_state(State):-
+    sort1(State, Sorted),
+    print_all(Sorted).
+
+print_all([pos(X1, Y1/Z1), pos(X2, Y2/Z2), pos(X3, Y3/Z3),
+           pos(X4, Y4/Z4), pos(X5, Y5/Z5), pos(X6, Y6/Z6),
+           pos(X7, Y7/Z7), pos(X8, Y8/Z8), pos(X9, Y9/Z9) ]):-
+    write(X1), write(" "),
+    write(X2), write(" "),
+    write(X3), write(" "), nl,
+    write(X4), write(" "),
+    write(X5), write(" "),
+    write(X6), write(" "), nl,
+    write(X7), write(" "),
+    write(X8), write(" "),
+    write(X9), write(" "), nl.
+
+cheaper(>, pos(_, Y1/Z1), pos(_, Y2/Z2)):-
+    Z1 < Z2.
+
+cheaper(>, pos(_, Y1/Z), pos(_, Y2/Z)):-
+    Y1 > Y2.
+
+cheaper(<, pos(_, Y1/Z1), pos(_, Y2/Z2)):-
+    Z1 > Z2.
+
+cheaper(<, pos(_, Y1/Z), pos(_, Y2/Z)):-
+    Y1 < Y2.
+
+cheaper(=, pos(_, Y/Z), pos(_, Y/Z)).
+
+sort1(List, Sorted):-
+    predsort(cheaper, List, Sorted).
+\end{lstlisting}
+
+\section{Przykładowy przebieg (z etapu 3)}\label{sec:general}
+\subsection{Dane wejściowe}\label{sec:input}
+\begin{lstlisting}[language=Prolog]
+% 1 2 3
+% 4   6
+% 7 5 8
+a_star([ pos(0 , 2/2), pos(1 , 1/3), pos(2 , 2/3),
+         pos(3 , 3/3), pos(4 , 1/2), pos(5 , 2/1),
+         pos(6 , 3/2), pos(7 , 1/1), pos(8 , 3/1) ], PC, 2, 2).
+\end{lstlisting}
+\subsection{Wykonanie}\label{sec:exec}
+
+\begin{lstlisting}[]
+qwe ~/pro/JPSProj $ swipl AStar3.pl 
+Warning: /home/qwe/pro/JPSProj/AStar3.pl:187:
+	Singleton variables: [Y1,Z1,Y2,Z2,Y3,Z3,Y4,Z4,Y5,Z5,Y6,Z6,Y7,Z7,Y8,Z8,Y9,Z9]
+Warning: /home/qwe/pro/JPSProj/AStar3.pl:200:
+	Singleton variables: [Y1,Y2]
+Warning: /home/qwe/pro/JPSProj/AStar3.pl:206:
+	Singleton variables: [Y1,Y2]
+Welcome to SWI-Prolog (threaded, 64 bits, version 7.4.2)
+SWI-Prolog comes with ABSOLUTELY NO WARRANTY. This is free software.
+Please run ?- license. for legal details.
+
+For online help and background, visit http://www.swi-prolog.org
+For built-in help, use ?- help(Topic). or ?- apropos(Word).
+
+?- a_star([ pos(0 , 2/2), pos(1 , 1/3), pos(2 , 2/3), pos(3 , 3/3), pos(4 , 1/2), pos(5 , 2/1), pos(6 , 3/2), pos(7 , 1/1), pos(8 , 3/1) ], PC, 20, 20).
+Running start_A_star with N=20
+--------------------------------------
+Current step is 20
+Possible choices: 
+1 2 3 
+4 0 6 
+7 5 8 
+Score: 0
+
+
+; Fetching 
+1 2 3 
+4 0 6 
+7 5 8 
+Score: 0
+
+ OK ? (y/n) y.
+--------------------------------------
+Current step is 19
+Possible choices: 
+1 0 3 
+4 2 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+0 4 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+4 5 6 
+7 0 8 
+Score: 1
+
+1 2 3 
+4 6 0 
+7 5 8 
+Score: 1
+
+
+; Fetching 
+1 0 3 
+4 2 6 
+7 5 8 
+Score: 1
+
+ OK ? (y/n) |: n.
+--------------------------------------
+Current step is 19
+Possible choices: 
+1 0 3 
+4 2 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+0 4 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+4 5 6 
+7 0 8 
+Score: 1
+
+1 2 3 
+4 6 0 
+7 5 8 
+Score: 1
+
+
+; Fetching 
+1 2 3 
+0 4 6 
+7 5 8 
+Score: 1
+
+ OK ? (y/n) |: n.
+--------------------------------------
+Current step is 19
+Possible choices: 
+1 0 3 
+4 2 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+0 4 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+4 5 6 
+7 0 8 
+Score: 1
+
+1 2 3 
+4 6 0 
+7 5 8 
+Score: 1
+
+
+; Fetching 
+1 2 3 
+4 5 6 
+7 0 8 
+Score: 1
+
+ OK ? (y/n) |: y.
+--------------------------------------
+Current step is 18
+Possible choices: 
+1 0 3 
+4 2 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+0 4 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+4 6 0 
+7 5 8 
+Score: 1
+
+1 2 3 
+4 0 6 
+7 5 8 
+Score: 2
+
+1 2 3 
+4 5 6 
+0 7 8 
+Score: 2
+
+1 2 3 
+4 5 6 
+7 8 0 
+Score: 2
+
+
+; Fetching 
+1 0 3 
+4 2 6 
+7 5 8 
+Score: 1
+
+ OK ? (y/n) |: n.
+--------------------------------------
+Current step is 18
+Possible choices: 
+1 0 3 
+4 2 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+0 4 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+4 6 0 
+7 5 8 
+Score: 1
+
+1 2 3 
+4 0 6 
+7 5 8 
+Score: 2
+
+1 2 3 
+4 5 6 
+0 7 8 
+Score: 2
+
+1 2 3 
+4 5 6 
+7 8 0 
+Score: 2
+
+
+; Fetching 
+1 2 3 
+0 4 6 
+7 5 8 
+Score: 1
+
+ OK ? (y/n) |: n.
+--------------------------------------
+Current step is 18
+Possible choices: 
+1 0 3 
+4 2 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+0 4 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+4 6 0 
+7 5 8 
+Score: 1
+
+1 2 3 
+4 0 6 
+7 5 8 
+Score: 2
+
+1 2 3 
+4 5 6 
+0 7 8 
+Score: 2
+
+1 2 3 
+4 5 6 
+7 8 0 
+Score: 2
+
+
+; Fetching 
+1 2 3 
+4 6 0 
+7 5 8 
+Score: 1
+
+ OK ? (y/n) |: n.
+--------------------------------------
+Current step is 18
+Possible choices: 
+1 0 3 
+4 2 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+0 4 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+4 6 0 
+7 5 8 
+Score: 1
+
+1 2 3 
+4 0 6 
+7 5 8 
+Score: 2
+
+1 2 3 
+4 5 6 
+0 7 8 
+Score: 2
+
+1 2 3 
+4 5 6 
+7 8 0 
+Score: 2
+
+
+; Fetching 
+1 2 3 
+4 5 6 
+0 7 8 
+Score: 2
+
+ OK ? (y/n) |: n.
+--------------------------------------
+Current step is 18
+Possible choices: 
+1 0 3 
+4 2 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+0 4 6 
+7 5 8 
+Score: 1
+
+1 2 3 
+4 6 0 
+7 5 8 
+Score: 1
+
+1 2 3 
+4 0 6 
+7 5 8 
+Score: 2
+
+1 2 3 
+4 5 6 
+0 7 8 
+Score: 2
+
+1 2 3 
+4 5 6 
+7 8 0 
+Score: 2
+
+
+; Fetching 
+1 2 3 
+4 5 6 
+7 8 0 
+Score: 2
+
+ OK ? (y/n) |: y.
+Path found!
+PC = path_cost([nil/[pos(0, 2/2), pos(1, 1/3), pos(2, 2/3), pos(3, 3/3), pos(4, ... / ...), pos(..., ...)|...], passX/[pos(0, 2/1), pos(1, 1/3), pos(2, 2/3), pos(3, ... / ...), pos(..., ...)|...], passX/[pos(0, 3/1), pos(1, 1/3), pos(2, ... / ...), pos(..., ...)|...]], 2).
+\end{lstlisting}
+
+
+\end{document}
